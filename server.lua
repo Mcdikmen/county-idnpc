@@ -52,7 +52,7 @@ RegisterNetEvent('county-idnpc:server:issue', function(kind)
     end
 
     -- ID number = permanent character ID (players.id); name/birthdate/gender/nationality are added by codem-inventory
-    local row = MySQL.single.await('SELECT id FROM players WHERE citizenid = ?', { ply.PlayerData.citizenid })
+    local row = exports.oxmysql:singleSync('SELECT id FROM players WHERE citizenid = ?', { ply.PlayerData.citizenid })
     local info = {
         idnumber = row and row.id or nil,
         issued = os.date('%d.%m.%Y'),
