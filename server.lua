@@ -68,3 +68,51 @@ RegisterNetEvent('county-idnpc:server:issue', function(kind)
         notify(src, 'Envanterinde yer yok, ücret iade edildi.', 'error')
     end
 end)
+
+-- /kimlikelkoy [id]: police seize the ID card of a nearby player. The card is removed from the
+-- target's inventory and appears in the officer's inventory with its ORIGINAL owner data
+-- (codem-inventory overwrites id_card info with the receiver's data, then merges the info we pass).
+QBCore.Commands.Add('kimlikelkoy', 'Yakındaki oyuncunun kimliğine el koy (sadece polis)', {
+    { name = 'id', help = 'Oyuncu ID (geçici ID)' },
+}, true, function(source, args)
+    local src = source
+    local officer = QBCore.Functions.GetPlayer(src)
+    if not officer then return end
+
+    if officer.PlayerData.job.type ~= 'leo' or not officer.PlayerData.job.onduty then
+        return notify(src, 'Bu komutu sadece görevdeki polis kullanabilir.', 'error')
+    end
+
+    local targetSrc = tonumber(args[1])
+    if not targetSrc or targetSrc == src then
+        return notify(src, 'Geçerli bir oyuncu ID gir (kendine kullanamazsın).', 'error')
+    end
+    local target = QBCore.Functions.GetPlayer(targetSrc)
+    if not target then
+        return notify(src, 'Bu ID ile oyuncu bulunamadı.', 'error')
+    end
+
+    local distance = #(GetEntityCoords(GetPlayerPed(src)) - GetEntityCoords(GetPlayerPed(targetSrc)))
+    if distance > Config.SeizeDistance then
+        return notify(src, 'Oyuncu yeterince yakın değil.', 'error')
+    end
+
+    local card = exports['codem-inventory']:GetItemByName(targetSrc, 'id_card')
+    if not card then
+        return notify(src, 'Bu oyuncunun üzerinde kimlik kartı yok.', 'error')
+    end
+
+    -- copy the card data, then give it to the officer first (fails if the inventory is full)
+    local info = {}
+    for k, v in pairs(card.info or {}) do info[k] = v end
+    if not exports['codem-inventory']:AddItem(src, 'id_card', 1, false, info) then
+        return notify(src, 'Envanterinde yer yok, kimliğe el koyulamadı.', 'error')
+    end
+    if not exports['codem-inventory']:RemoveItem(targetSrc, 'id_card', 1, card.slot) then
+        print(('[county-idnpc] WARNING: card was given to officer %s but could not be removed from %s'):format(src, targetSrc))
+    end
+
+    local name = ('%s %s'):format(info.firstname or target.PlayerData.charinfo.firstname, info.lastname or target.PlayerData.charinfo.lastname)
+    notify(src, ('%s adlı kişinin kimliğine el koydun.'):format(name), 'success')
+    notify(targetSrc, 'Kimlik kartına polis tarafından el konuldu.', 'error')
+end)

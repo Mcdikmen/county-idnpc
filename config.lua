@@ -10,3 +10,4 @@ Config.FirstFee = 100          -- first ID card (cash first, then bank)
 Config.RenewFee = 1000         -- replacement for a lost or confiscated card
 Config.SpawnDistance = 60.0    -- the ped exists only while a player is this close (interior streaming)
 Config.UseDistance = 4.0       -- server-side check when the request is sent
+Config.SeizeDistance = 3.0     -- /kimlikelkoy: max distance between officer and target (meters)
