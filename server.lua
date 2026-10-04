@@ -14,7 +14,7 @@ local function money(amount)
     return s
 end
 
--- kind: 'first' (first ID card) or 'renew' (replacement for a lost card)
+-- kind: 'first' (first ID card) or 'renew' (replacement for a lost or confiscated card)
 RegisterNetEvent('county-idnpc:server:issue', function(kind)
     local src = source
     local ply = QBCore.Functions.GetPlayer(src)
@@ -31,7 +31,7 @@ RegisterNetEvent('county-idnpc:server:issue', function(kind)
     -- how many cards were issued before (stored in the character metadata, no extra table needed)
     local issued = tonumber(ply.PlayerData.metadata['idissued']) or 0
     if kind == 'first' and issued > 0 then
-        return notify(src, 'Daha önce kimlik çıkarılmış. Kaybettiysen "Kayıp kimlik yenileme" başvurusu yap.', 'error')
+        return notify(src, 'Daha önce kimlik çıkarılmış. Kimliğin kaybolduysa ya da el konulduysa "Kimlik yenileme" başvurusu yap.', 'error')
     end
     if kind == 'renew' and issued == 0 then
         return notify(src, 'Daha önce kimlik çıkarılmamış. "İlk kimlik başvurusu" yap.', 'error')
@@ -62,7 +62,7 @@ RegisterNetEvent('county-idnpc:server:issue', function(kind)
 
     if ply.Functions.AddItem('id_card', 1, false, info) then
         ply.Functions.SetMetaData('idissued', issued + 1)
-        notify(src, kind == 'first' and 'Kimlik kartın hazırlandı. İyi günler.' or 'Yeni kimlik kartın hazırlandı. Bir daha kaybetme.', 'success')
+        notify(src, kind == 'first' and 'Kimlik kartın hazırlandı. İyi günler.' or 'Yeni kimlik kartın hazırlandı. Kimliğini dikkatli taşı.', 'success')
     else
         if paidWith then ply.Functions.AddMoney(paidWith, fee, 'id-card-refund') end
         notify(src, 'Envanterinde yer yok, ücret iade edildi.', 'error')

@@ -80,8 +80,8 @@ RegisterNetEvent('county-idnpc:client:menu', function()
             params = { event = 'county-idnpc:client:request', args = 'first' },
         },
         {
-            header = 'Kayıp kimlik yenileme',
-            txt = ('Ücret: %s$ | Kimliğini kaybettiysen'):format(money(Config.RenewFee)),
+            header = 'Kimlik yenileme',
+            txt = ('Ücret: %s$ | Kimliğin kaybolduysa ya da el konulduysa'):format(money(Config.RenewFee)),
             params = { event = 'county-idnpc:client:request', args = 'renew' },
         },
         { header = 'Kapat', params = { event = 'qb-menu:client:closeMenu' } },
