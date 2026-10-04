@@ -1,14 +1,6 @@
 local npc = nil
 local pedCoords = Config.Ped.coords
 
-local function optionList(list)
-    local options = {}
-    for _, name in ipairs(list) do
-        options[#options + 1] = { value = name, text = name }
-    end
-    return options
-end
-
 local function removeNpc()
     if npc and DoesEntityExist(npc) then
         exports['qb-target']:RemoveTargetEntity(npc)
@@ -45,7 +37,7 @@ local function spawnNpc()
                 type = 'client',
                 event = 'county-idnpc:client:menu',
                 icon = 'fas fa-id-card',
-                label = 'Kimlik Başvurusu',
+                label = 'Kimlik İşlemleri',
             },
         },
         distance = 2.5,
@@ -68,31 +60,34 @@ AddEventHandler('onResourceStop', function(resource)
     if resource == GetCurrentResourceName() then removeNpc() end
 end)
 
+local function money(amount)
+    -- 1000 -> "1.000"
+    local s = tostring(amount)
+    while true do
+        local replaced
+        s, replaced = s:gsub('^(-?%d+)(%d%d%d)', '%1.%2')
+        if replaced == 0 then break end
+    end
+    return s
+end
+
 RegisterNetEvent('county-idnpc:client:menu', function()
-    local fee = Config.Fee > 0 and ('Ücret: %s$'):format(Config.Fee) or 'Ücretsiz'
     exports['qb-menu']:openMenu({
         { header = 'Polis Kimlik Bürosu', isMenuHeader = true },
         {
-            header = 'Kimlik başvurusu yap',
-            txt = fee .. ' | Kimliğin yoksa yeni kart çıkarılır',
-            params = { event = 'county-idnpc:client:apply' },
+            header = 'İlk kimlik başvurusu',
+            txt = ('Ücret: %s$ | Daha önce kimlik çıkarmadıysan'):format(money(Config.FirstFee)),
+            params = { event = 'county-idnpc:client:request', args = 'first' },
+        },
+        {
+            header = 'Kayıp kimlik yenileme',
+            txt = ('Ücret: %s$ | Kimliğini kaybettiysen'):format(money(Config.RenewFee)),
+            params = { event = 'county-idnpc:client:request', args = 'renew' },
         },
         { header = 'Kapat', params = { event = 'qb-menu:client:closeMenu' } },
     })
 end)
 
-RegisterNetEvent('county-idnpc:client:apply', function()
-    local form = exports['qb-input']:ShowInput({
-        header = 'Kimlik Başvuru Formu',
-        submitText = 'Başvur',
-        inputs = {
-            { type = 'number', isRequired = true, name = 'height', text = ('Boy (cm, %d-%d)'):format(Config.MinHeight, Config.MaxHeight) },
-            { type = 'select', isRequired = true, name = 'eye', text = 'Göz rengi', options = optionList(Config.EyeColors) },
-            { type = 'select', isRequired = true, name = 'hair', text = 'Saç rengi', options = optionList(Config.HairColors) },
-            { type = 'text', isRequired = true, name = 'address', text = 'İkametgah adresi' },
-        },
-    })
-    if form then
-        TriggerServerEvent('county-idnpc:server:issue', form)
-    end
+RegisterNetEvent('county-idnpc:client:request', function(kind)
+    TriggerServerEvent('county-idnpc:server:issue', kind)
 end)

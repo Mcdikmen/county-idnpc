@@ -4,17 +4,21 @@ local function notify(src, msg, kind)
     TriggerClientEvent('QBCore:Notify', src, msg, kind or 'error')
 end
 
-local function inList(list, value)
-    for _, v in ipairs(list) do
-        if v == value then return true end
+local function money(amount)
+    local s = tostring(amount)
+    while true do
+        local replaced
+        s, replaced = s:gsub('^(-?%d+)(%d%d%d)', '%1.%2')
+        if replaced == 0 then break end
     end
-    return false
+    return s
 end
 
-RegisterNetEvent('county-idnpc:server:issue', function(form)
+-- kind: 'first' (first ID card) or 'renew' (replacement for a lost card)
+RegisterNetEvent('county-idnpc:server:issue', function(kind)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    if not Player or type(form) ~= 'table' then return end
+    local ply = QBCore.Functions.GetPlayer(src)
+    if not ply or (kind ~= 'first' and kind ~= 'renew') then return end
 
     -- must be standing at the desk (the event can be triggered by a modified client)
     local pc = Config.Ped.coords
@@ -24,46 +28,43 @@ RegisterNetEvent('county-idnpc:server:issue', function(form)
         return notify(src, 'Zaten bir kimlik kartın var.', 'error')
     end
 
-    -- validate the answers
-    local height = tonumber(form.height)
-    local address = type(form.address) == 'string' and form.address:gsub('[%c]', ''):match('^%s*(.-)%s*$') or ''
-    if not height or height < Config.MinHeight or height > Config.MaxHeight then
-        return notify(src, ('Boy %d-%d cm arasında olmalı.'):format(Config.MinHeight, Config.MaxHeight), 'error')
+    -- how many cards were issued before (stored in the character metadata, no extra table needed)
+    local issued = tonumber(ply.PlayerData.metadata['idissued']) or 0
+    if kind == 'first' and issued > 0 then
+        return notify(src, 'Daha önce kimlik çıkarılmış. Kaybettiysen "Kayıp kimlik yenileme" başvurusu yap.', 'error')
     end
-    if not inList(Config.EyeColors, form.eye) or not inList(Config.HairColors, form.hair) then
-        return notify(src, 'Formda geçersiz bir seçim var.', 'error')
-    end
-    if address == '' or #address > Config.MaxAddressLength then
-        return notify(src, ('Adres 1-%d karakter olmalı.'):format(Config.MaxAddressLength), 'error')
+    if kind == 'renew' and issued == 0 then
+        return notify(src, 'Daha önce kimlik çıkarılmamış. "İlk kimlik başvurusu" yap.', 'error')
     end
 
     -- fee: cash first, then bank
-    local fee = Config.Fee
+    local fee = kind == 'first' and Config.FirstFee or Config.RenewFee
     local paidWith
     if fee > 0 then
-        if Player.PlayerData.money.cash >= fee then
+        if ply.PlayerData.money.cash >= fee then
             paidWith = 'cash'
-        elseif Player.PlayerData.money.bank >= fee then
+        elseif ply.PlayerData.money.bank >= fee then
             paidWith = 'bank'
         else
-            return notify(src, ('Kimlik ücreti için yeterli paran yok (%s$).'):format(fee), 'error')
+            return notify(src, ('Yeterli paran yok (%s$).'):format(money(fee)), 'error')
         end
-        Player.Functions.RemoveMoney(paidWith, fee, 'id-card-fee')
+        ply.Functions.RemoveMoney(paidWith, fee, 'id-card-fee')
     end
 
+    -- ID number = permanent character ID (players.id); name/birthdate/gender/nationality are added by codem-inventory
+    local row = MySQL.single.await('SELECT id FROM players WHERE citizenid = ?', { ply.PlayerData.citizenid })
     local info = {
-        height = math.floor(height),
-        eyecolor = form.eye,
-        haircolor = form.hair,
-        address = address,
+        idnumber = row and row.id or nil,
         issued = os.date('%d.%m.%Y'),
         issuedby = 'MRPD',
+        reissue = kind == 'renew' or nil,
     }
 
-    if Player.Functions.AddItem('id_card', 1, false, info) then
-        notify(src, 'Kimlik kartın hazırlandı. İyi günler.', 'success')
+    if ply.Functions.AddItem('id_card', 1, false, info) then
+        ply.Functions.SetMetaData('idissued', issued + 1)
+        notify(src, kind == 'first' and 'Kimlik kartın hazırlandı. İyi günler.' or 'Yeni kimlik kartın hazırlandı. Bir daha kaybetme.', 'success')
     else
-        if paidWith then Player.Functions.AddMoney(paidWith, fee, 'id-card-refund') end
+        if paidWith then ply.Functions.AddMoney(paidWith, fee, 'id-card-refund') end
         notify(src, 'Envanterinde yer yok, ücret iade edildi.', 'error')
     end
 end)

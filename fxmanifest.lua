@@ -10,10 +10,14 @@ version '1.0.0'
 dependencies {
     'qb-core',
     'qb-menu',
-    'qb-input',
     'qb-target',
+    'oxmysql',
 }
 
 shared_script 'config.lua'
 client_script 'client.lua'
-server_script 'server.lua'
+
+server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    'server.lua',
+}

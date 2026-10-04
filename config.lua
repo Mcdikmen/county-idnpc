@@ -6,13 +6,7 @@ Config.Ped = {
     scenario = 'WORLD_HUMAN_CLIPBOARD',
 }
 
-Config.Fee = 100               -- paid in cash, falls back to bank. 0 = free
+Config.FirstFee = 100          -- first ID card (cash first, then bank)
+Config.RenewFee = 1000         -- replacement for a lost card
 Config.SpawnDistance = 60.0    -- the ped exists only while a player is this close (interior streaming)
-Config.UseDistance = 4.0       -- server-side check when the form is submitted
-
-Config.MinHeight = 140
-Config.MaxHeight = 215
-Config.MaxAddressLength = 60
-
-Config.EyeColors = { 'Kahverengi', 'Siyah', 'Mavi', 'Yeşil', 'Ela', 'Gri' }
-Config.HairColors = { 'Siyah', 'Kahverengi', 'Sarı', 'Kızıl', 'Gri', 'Beyaz', 'Kel' }
+Config.UseDistance = 4.0       -- server-side check when the request is sent
