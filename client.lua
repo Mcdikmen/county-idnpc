@@ -60,6 +60,11 @@ AddEventHandler('onResourceStop', function(resource)
     if resource == GetCurrentResourceName() then removeNpc() end
 end)
 
+-- qb-target forgets every registered target when it restarts; respawn the NPC so the target is re-added
+AddEventHandler('onResourceStart', function(resource)
+    if resource == 'qb-target' then removeNpc() end
+end)
+
 local function money(amount)
     -- 1000 -> "1.000"
     local s = tostring(amount)
