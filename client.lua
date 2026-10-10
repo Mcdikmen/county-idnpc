@@ -91,7 +91,7 @@ RegisterNetEvent('county-idnpc:client:menu', function()
         },
         {
             header = 'Kayıp araç anahtarı',
-            txt = 'Kendi aracının anahtarını yenile | Ücret: 100$ (qs-vehiclekeys Config.CountyKeyRecovery.Fee ile aynı tut)',
+            txt = 'Kendi aracının anahtarını yenile | Ücret: 100$',
             params = { event = 'countyrp:keyrecovery:menu' }, -- handled by qs-vehiclekeys (custom/client.lua)
         },
         { header = 'Kapat', params = { event = 'qb-menu:client:closeMenu' } },
