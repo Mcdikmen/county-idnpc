@@ -89,6 +89,11 @@ RegisterNetEvent('county-idnpc:client:menu', function()
             txt = ('Ücret: %s$ | Kimliğin kaybolduysa ya da el konulduysa'):format(money(Config.RenewFee)),
             params = { event = 'county-idnpc:client:request', args = 'renew' },
         },
+        {
+            header = 'Kayıp araç anahtarı',
+            txt = 'Kendi aracının anahtarını yenile | Ücret: 100$ (qs-vehiclekeys Config.CountyKeyRecovery.Fee ile aynı tut)',
+            params = { event = 'countyrp:keyrecovery:menu' }, -- handled by qs-vehiclekeys (custom/client.lua)
+        },
         { header = 'Kapat', params = { event = 'qb-menu:client:closeMenu' } },
     })
 end)
