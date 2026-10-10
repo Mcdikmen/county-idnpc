@@ -116,3 +116,27 @@ QBCore.Commands.Add('kimlikelkoy', 'Yakındaki oyuncunun kimliğine el koy (sade
     notify(src, ('%s adlı kişinin kimliğine el koydun.'):format(name), 'success')
     notify(targetSrc, 'Kimlik kartına polis tarafından el konuldu.', 'error')
 end)
+
+
+-- exports['county-idnpc']:HasOwnIdCard(src): true when the player carries an id_card issued for THIS character
+-- (info.idnumber == players.id). A card seized from someone else keeps the original owner's idnumber and does not count.
+-- Used by the official-transaction gates (codem-billing bills/fines, ...).
+exports('HasOwnIdCard', function(src)
+    local ply = QBCore.Functions.GetPlayer(src)
+    if not ply then return false end
+
+    local row = exports.oxmysql:singleSync('SELECT id FROM players WHERE citizenid = ?', { ply.PlayerData.citizenid })
+    local ownId = row and tonumber(row.id)
+    if not ownId then return false end
+
+    local ok, items = pcall(function() return exports['codem-inventory']:GetItemsByName(src, 'id_card') end)
+    if not ok or type(items) ~= 'table' then return false end
+
+    for _, item in pairs(items) do
+        local info = type(item) == 'table' and (item.info or item.metadata)
+        if type(info) == 'table' and tonumber(info.idnumber) == ownId then
+            return true
+        end
+    end
+    return false
+end)
